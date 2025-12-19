@@ -1,0 +1,288 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum for status
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+// Enum for Profile
+enum Profile {
+  INFLUENCER
+  ADVERTISER
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+// Model for User
+model User {
+  id String @id @default(uuid())
+
+  email     String   @unique
+  firstName String
+  lastName  String
+  birthDate DateTime
+  phone     String
+  gender    Gender   @default(OTHER)
+  password  String
+  profile   Profile  @default(INFLUENCER)
+
+  avatar         String?
+  status         Status      @default(ACTIVE)
+  emailConfirmed Boolean     @default(false)
+  emailToken     String      @default(uuid())
+  authTokens     AuthToken[]
+  Audit          Audit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  TicketComment TicketComment[]
+  Notification  Notification[]
+
+  // Indexes for better performance
+  @@index([email])
+  @@index([status])
+  @@index([profile])
+  @@index([emailToken])
+}
+
+// Model for AuthToken
+model AuthToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes for better performance
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([token])
+}
+
+// Model for Audit - tracks user actions for compliance and security
+model Audit {
+  id     String  @id @default(uuid())
+  action String // Action performed (CREATE, UPDATE, DELETE, etc.)
+  entity String // Entity affected (User, AuthToken, etc.)
+  userId String? // Made optional in case of system actions
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes for better performance on audit queries
+  @@index([userId])
+  @@index([entity])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// Referrals module storage
+model ReferralLink {
+  id        String   @id @default(uuid())
+  userId    String
+  code      String   @unique
+  url       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model ReferralShare {
+  id        String   @id @default(uuid())
+  userId    String
+  linkCode  String
+  channel   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([linkCode])
+  @@index([channel])
+}
+
+model ReferralWallet {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  currency       String   @default("BRL")
+  available      Float    @default(0)
+  pending        Float    @default(0)
+  lifetimeEarned Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ReferralBenefit {
+  id                String   @id @default(uuid())
+  title             String
+  description       String
+  requiredReferrals Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model ReferralTransfer {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Float
+  bankCode  String
+  branch    String
+  account   String
+  document  String
+  status    String   @default("requested")
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// HelpDesk tickets
+model Ticket {
+  id          String         @id @default(uuid())
+  userId      String
+  title       String
+  description String
+  category    TicketCategory @default(OTHER)
+  priority    TicketPriority @default(LOW)
+  status      TicketStatus   @default(OPEN)
+  resolution  String?
+  attachments Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  comments TicketComment[]
+  Anexo    Anexo[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+}
+
+enum TicketCategory {
+  PAYMENTS
+  ACCOUNT
+  BUGS
+  ACCESS
+  TECH_SUPPORT
+  SUBSCRIPTION
+  REGISTRATION
+  LOGIN
+  PERFORMANCE
+  OTHER
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model Anexo {
+  id       String  @id @default(uuid())
+  size     Int?
+  filename String?
+  mimetype String?
+  url      String
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  Ticket          Ticket?        @relation(fields: [ticketId], references: [id])
+  ticketId        String?
+  TicketComment   TicketComment? @relation(fields: [ticketCommentId], references: [id])
+  ticketCommentId String?
+}
+
+// Comments for HelpDesk tickets
+model TicketComment {
+  id          String   @id @default(uuid())
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     String
+  anexo       Anexo[]
+  isInternal  Boolean  @default(false)
+  attachments Json?
+  createdAt   DateTime @default(now())
+
+  @@index([ticketId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Notifications for users
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  url       String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read, createdAt])
+}
+
+// Audit logs for HelpDesk endpoints
+enum LogLevel {
+  INFO
+  WARNING
+  ERROR
+}
+
+model HelpdeskAuditLog {
+  id          String   @id @default(uuid())
+  endpoint    String
+  method      String
+  params      Json?
+  requestedAt DateTime @default(now())
+  ip          String?
+
+  userId      String?
+  accessLevel String?
+  department  String?
+
+  statusCode Int
+  durationMs Int
+  level      LogLevel @default(INFO)
+
+  action String?
+  entity String?
+  before Json?
+  after  Json?
+
+  // Immutability: no updatedAt to discourage updates; use insert-only
+  createdAt DateTime @default(now())
+
+  @@index([requestedAt])
+  @@index([userId])
+  @@index([level])
+  @@index([endpoint, method])
+}
