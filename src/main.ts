@@ -2,14 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const openapiToPostman = require('openapi-to-postmanv2');
+import openapiToPostman from 'openapi-to-postmanv2';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
-    .setTitle('Gabaritte API')
-    .setDescription('API do Gabaritte')
+    .setTitle('Estudei Track API')
+    .setDescription('API do Estudei Track')
     .setVersion('1.0.0')
     .addBearerAuth()
     .build();
@@ -22,7 +22,7 @@ async function bootstrap() {
       openapiToPostman.convert(
         { type: 'json', data: document },
         {
-          collectionName: (document as any)?.info?.title || 'Gabaritte API',
+          collectionName: (document as any)?.info?.title || 'Estudei Track API',
           strictValidation: false,
           // Gera exemplos quando possível para enriquecer a collection
           schemaFaker: true,
