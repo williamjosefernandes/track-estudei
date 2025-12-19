@@ -7,7 +7,7 @@ export class MetricsScheduler {
   private readonly logger = new Logger(MetricsScheduler.name);
   constructor(private readonly metricsService: MetricsService) {}
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async handleCron() {
     this.logger.log('Running scheduled estudei metrics collection');
     try {
