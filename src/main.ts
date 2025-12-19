@@ -5,6 +5,20 @@ import { AppModule } from './app.module';
 import openapiToPostman from 'openapi-to-postmanv2';
 
 async function bootstrap() {
+  // Ensure globalThis.crypto is defined (some Node/Docker images lack it)
+  if (!(globalThis as any).crypto) {
+    try {
+      const nodeCrypto = await import('crypto');
+      // Prefer webcrypto if available
+      (globalThis as any).crypto = (nodeCrypto as any).webcrypto ?? nodeCrypto;
+    } catch (_err) {
+      const nodeCrypto = await import('crypto');
+      (globalThis as any).crypto = {
+        randomUUID: () => (nodeCrypto as any).randomBytes(16).toString('hex'),
+      };
+    }
+  }
+
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
@@ -29,21 +43,36 @@ async function bootstrap() {
         },
         (err: any, result: any) => {
           if (err) {
-            res.status(500).json({ message: 'Conversion error', error: String(err) });
+            res.status(500);
+            res.json({
+              message: 'Conversion error',
+              error: String(err),
+            });
             return;
           }
           if (!result || !result.result) {
-            res.status(500).json({ message: 'Conversion failed', reason: result && result.reason });
+            res.status(500);
+            res.json({
+              message: 'Conversion failed',
+              reason: result && result.reason,
+            });
             return;
           }
           const collection = result.output[0].data;
           res.setHeader('Content-Type', 'application/json');
-          res.setHeader('Content-Disposition', 'attachment; filename="postman_collection_v2.1.json"');
+          res.setHeader(
+            'Content-Disposition',
+            'attachment; filename="postman_collection_v2.1.json"',
+          );
           res.send(JSON.stringify(collection, null, 2));
         },
       );
     } catch (e) {
-      res.status(500).json({ message: 'Unexpected error during conversion', error: String(e) });
+      res.status(500);
+      res.json({
+        message: 'Unexpected error during conversion',
+        error: String(e),
+      });
     }
   });
   app.enableCors({

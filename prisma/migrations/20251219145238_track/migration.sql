@@ -222,6 +222,7 @@ CREATE TABLE "public"."EstudeiMetric" (
     "studies" INTEGER,
     "durationStudiesWeek" BIGINT,
     "students" INTEGER,
+    "value" DECIMAL(12,2),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "EstudeiMetric_pkey" PRIMARY KEY ("id")

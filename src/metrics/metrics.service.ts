@@ -397,7 +397,9 @@ export class MetricsService {
       };
 
       // difference of students inside the bucket (latest - earliest)
-      const studentsDeltaBucket = toNumber(latest.students) - toNumber(earliest.students);
+
+      const studentsDeltaBucket =
+        toNumber(latest.students) - toNumber(earliest.students);
 
       const delta = {
         students: Math.max(0, total.students - previous.students),
