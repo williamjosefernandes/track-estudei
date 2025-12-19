@@ -29,6 +29,25 @@ export class MetricsController {
   private readonly logger = new Logger(MetricsController.name);
   constructor(private readonly metricsService: MetricsService) {}
 
+  // Helper to format number as Brazilian Real currency string
+  private formatCurrency(value?: number | null) {
+    const n = typeof value === 'number' ? value : Number(value ?? 0);
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(n);
+  }
+
+  // Helper to format plain numbers in Brazilian format (e.g. 1.234 or 1.234,56)
+  private formatNumber(value?: number | null) {
+    const n = typeof value === 'number' ? value : Number(value ?? 0);
+    // Use maximumFractionDigits = 2 to preserve small fractional values if present
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(n);
+  }
+
   @Post('collect')
   @HttpCode(202)
   async collect() {
@@ -116,32 +135,41 @@ export class MetricsController {
       end: isoEnd,
     });
 
-    const data = raw.map((r) => ({
-      period: r.period,
-      novosUsuarios: r.new.students,
-      usuariosTotais: r.total.students,
+    const data = raw.map((r) => {
+      const studentsDelta = Number(r.studentsDeltaBucket) || 0;
+      // studentsDelta = latest.students - earliest.students
+      const valorNovosUsuariosRaw = studentsDelta * 28.4;
+      return {
+        period: r.period,
+        novosUsuarios: this.formatNumber(r.new.students),
+        usuariosTotais: this.formatNumber(r.total.students),
 
-      novosPlanos: r.new.plans,
-      planosTotais: r.total.plans,
+        novosPlanos: this.formatNumber(r.new.plans),
+        planosTotais: this.formatNumber(r.total.plans),
 
-      novosTopicos: r.new.topics,
-      topicosTotais: r.total.topics,
+        novosTopicos: this.formatNumber(r.new.topics),
+        topicosTotais: this.formatNumber(r.total.topics),
 
-      novosAssuntos: r.new.subjects,
-      assuntosTotais: r.total.subjects,
+        novosAssuntos: this.formatNumber(r.new.subjects),
+        assuntosTotais: this.formatNumber(r.total.subjects),
 
-      novosPlanejamentos: r.new.plannings,
-      planejamentosTotais: r.total.plannings,
+        novosPlanejamentos: this.formatNumber(r.new.plannings),
+        planejamentosTotais: this.formatNumber(r.total.plannings),
 
-      novosEstudos: r.new.studies,
-      estudosTotais: r.total.studies,
+        novosEstudos: this.formatNumber(r.new.studies),
+        estudosTotais: this.formatNumber(r.total.studies),
 
-      novosDuracaoSemana: r.new.durationStudiesWeek,
-      duracaoSemanaTotais: r.total.durationStudiesWeek,
+        novosDuracaoSemana: this.formatNumber(r.new.durationStudiesWeek),
+        duracaoSemanaTotais: this.formatNumber(r.total.durationStudiesWeek),
 
-      valorNovo: r.new.value,
-      valorTotal: r.total.value,
-    }));
+        // Monetary value for new users only: (primeiro - último) * 28.40
+        // service returns studiesDeltaBucket = latest - earliest
+        valorNovosUsuarios: this.formatCurrency(valorNovosUsuariosRaw),
+
+        valorNovo: this.formatCurrency(r.new.value),
+        valorTotal: this.formatCurrency(r.total.value),
+      };
+    });
 
     return { data };
   }
@@ -194,25 +222,31 @@ export class MetricsController {
       end: computedEnd,
     });
 
-    const data = raw.map((r) => ({
-      period: r.period,
-      novosUsuarios: r.new.students,
-      usuariosTotais: r.total.students,
-      novosPlanos: r.new.plans,
-      planosTotais: r.total.plans,
-      novosTopicos: r.new.topics,
-      topicosTotais: r.total.topics,
-      novosAssuntos: r.new.subjects,
-      assuntosTotais: r.total.subjects,
-      novosPlanejamentos: r.new.plannings,
-      planejamentosTotais: r.total.plannings,
-      novosEstudos: r.new.studies,
-      estudosTotais: r.total.studies,
-      novosDuracaoSemana: r.new.durationStudiesWeek,
-      duracaoSemanaTotais: r.total.durationStudiesWeek,
-      valorNovo: r.new.value,
-      valorTotal: r.total.value,
-    }));
+    const data = raw.map((r) => {
+      const studentsDelta = Number(r.studentsDeltaBucket) || 0;
+      const valorNovosUsuariosRaw = studentsDelta * 28.4;
+      return {
+        period: r.period,
+        novosUsuarios: this.formatNumber(r.new.students),
+        usuariosTotais: this.formatNumber(r.total.students),
+        novosPlanos: this.formatNumber(r.new.plans),
+        planosTotais: this.formatNumber(r.total.plans),
+        novosTopicos: this.formatNumber(r.new.topics),
+        topicosTotais: this.formatNumber(r.total.topics),
+        novosAssuntos: this.formatNumber(r.new.subjects),
+        assuntosTotais: this.formatNumber(r.total.subjects),
+        novosPlanejamentos: this.formatNumber(r.new.plannings),
+        planejamentosTotais: this.formatNumber(r.total.plannings),
+        novosEstudos: this.formatNumber(r.new.studies),
+        estudosTotais: this.formatNumber(r.total.studies),
+        novosDuracaoSemana: this.formatNumber(r.new.durationStudiesWeek),
+        duracaoSemanaTotais: this.formatNumber(r.total.durationStudiesWeek),
+        // Monetary value for new users only: (primeiro - último) * 28.40
+        valorNovosUsuarios: this.formatCurrency(valorNovosUsuariosRaw),
+        valorNovo: this.formatCurrency(r.new.value),
+        valorTotal: this.formatCurrency(r.total.value),
+      };
+    });
 
     return { data };
   }
@@ -265,25 +299,31 @@ export class MetricsController {
       end: computedEnd,
     });
 
-    const data = raw.map((r) => ({
-      period: r.period,
-      novosUsuarios: r.new.students,
-      usuariosTotais: r.total.students,
-      novosPlanos: r.new.plans,
-      planosTotais: r.total.plans,
-      novosTopicos: r.new.topics,
-      topicosTotais: r.total.topics,
-      novosAssuntos: r.new.subjects,
-      assuntosTotais: r.total.subjects,
-      novosPlanejamentos: r.new.plannings,
-      planejamentosTotais: r.total.plannings,
-      novosEstudos: r.new.studies,
-      estudosTotais: r.total.studies,
-      novosDuracaoSemana: r.new.durationStudiesWeek,
-      duracaoSemanaTotais: r.total.durationStudiesWeek,
-      valorNovo: r.new.value,
-      valorTotal: r.total.value,
-    }));
+    const data = raw.map((r) => {
+      const studentsDelta = Number(r.studentsDeltaBucket) || 0;
+      const valorNovosUsuariosRaw = studentsDelta * 28.4;
+      return {
+        period: r.period,
+        novosUsuarios: this.formatNumber(r.new.students),
+        usuariosTotais: this.formatNumber(r.total.students),
+        novosPlanos: this.formatNumber(r.new.plans),
+        planosTotais: this.formatNumber(r.total.plans),
+        novosTopicos: this.formatNumber(r.new.topics),
+        topicosTotais: this.formatNumber(r.total.topics),
+        novosAssuntos: this.formatNumber(r.new.subjects),
+        assuntosTotais: this.formatNumber(r.total.subjects),
+        novosPlanejamentos: this.formatNumber(r.new.plannings),
+        planejamentosTotais: this.formatNumber(r.total.plannings),
+        novosEstudos: this.formatNumber(r.new.studies),
+        estudosTotais: this.formatNumber(r.total.studies),
+        novosDuracaoSemana: this.formatNumber(r.new.durationStudiesWeek),
+        duracaoSemanaTotais: this.formatNumber(r.total.durationStudiesWeek),
+        // Monetary value for new users only: (primeiro - último) * 28.40
+        valorNovosUsuarios: this.formatCurrency(valorNovosUsuariosRaw),
+        valorNovo: this.formatCurrency(r.new.value),
+        valorTotal: this.formatCurrency(r.total.value),
+      };
+    });
 
     return { data };
   }
@@ -317,25 +357,31 @@ export class MetricsController {
       end: isoEnd,
     });
 
-    const data = raw.map((r) => ({
-      period: r.period,
-      novosUsuarios: r.new.students,
-      usuariosTotais: r.total.students,
-      novosPlanos: r.new.plans,
-      planosTotais: r.total.plans,
-      novosTopicos: r.new.topics,
-      topicosTotais: r.total.topics,
-      novosAssuntos: r.new.subjects,
-      assuntosTotais: r.total.subjects,
-      novosPlanejamentos: r.new.plannings,
-      planejamentosTotais: r.total.plannings,
-      novosEstudos: r.new.studies,
-      estudosTotais: r.total.studies,
-      novosDuracaoSemana: r.new.durationStudiesWeek,
-      duracaoSemanaTotais: r.total.durationStudiesWeek,
-      valorNovo: r.new.value,
-      valorTotal: r.total.value,
-    }));
+    const data = raw.map((r) => {
+      const studentsDelta = Number(r.studentsDeltaBucket) || 0;
+      const valorNovosUsuariosRaw = studentsDelta * 28.4;
+      return {
+        period: r.period,
+        novosUsuarios: this.formatNumber(r.new.students),
+        usuariosTotais: this.formatNumber(r.total.students),
+        novosPlanos: this.formatNumber(r.new.plans),
+        planosTotais: this.formatNumber(r.total.plans),
+        novosTopicos: this.formatNumber(r.new.topics),
+        topicosTotais: this.formatNumber(r.total.topics),
+        novosAssuntos: this.formatNumber(r.new.subjects),
+        assuntosTotais: this.formatNumber(r.total.subjects),
+        novosPlanejamentos: this.formatNumber(r.new.plannings),
+        planejamentosTotais: this.formatNumber(r.total.plannings),
+        novosEstudos: this.formatNumber(r.new.studies),
+        estudosTotais: this.formatNumber(r.total.studies),
+        novosDuracaoSemana: this.formatNumber(r.new.durationStudiesWeek),
+        duracaoSemanaTotais: this.formatNumber(r.total.durationStudiesWeek),
+        // Monetary value for new users only: (primeiro - último) * 28.40
+        valorNovosUsuarios: this.formatCurrency(valorNovosUsuariosRaw),
+        valorNovo: this.formatCurrency(r.new.value),
+        valorTotal: this.formatCurrency(r.total.value),
+      };
+    });
 
     return { data };
   }

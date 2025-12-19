@@ -377,6 +377,7 @@ export class MetricsService {
       const items = buckets[key];
       items.sort((a, b) => a.date.getTime() - b.date.getTime());
       const latest = items[items.length - 1].metric;
+      const earliest = items[0].metric;
 
       const total = {
         students: toNumber(latest.students),
@@ -395,6 +396,9 @@ export class MetricsService {
             : 0,
       };
 
+      // difference of students inside the bucket (latest - earliest)
+      const studentsDeltaBucket = toNumber(latest.students) - toNumber(earliest.students);
+
       const delta = {
         students: Math.max(0, total.students - previous.students),
         plans: Math.max(0, total.plans - previous.plans),
@@ -409,7 +413,7 @@ export class MetricsService {
         value: Math.max(0, Number((total.value - previous.value).toFixed(2))),
       };
 
-      results.push({ period: key, total, new: delta });
+      results.push({ period: key, total, new: delta, studentsDeltaBucket });
 
       previous = {
         students: total.students,
