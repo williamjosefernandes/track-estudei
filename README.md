@@ -90,4 +90,37 @@ npm run start:dev
 - `DELETE /study-plan/:id` — Remover
 
 Demais módulos: `subjects`, `trails`, `trail-content`, `history`, `statistics`, `cronograma` seguem organização por controller e service em `src/`.
-```
+
+## Estudei Metrics Collector
+
+This project includes a small scheduler that collects metrics from https://api.estudei.com.br/public/statistics every 30 minutes and stores the raw JSON into the database using Prisma.
+
+Required environment variables:
+
+- ESTUDEI_API_BASE_URL (optional, default: https://api.estudei.com.br)
+- ESTUDEI_AUTH_EMAIL
+- ESTUDEI_AUTH_PASSWORD
+
+Setup (local):
+
+1. Generate Prisma client:
+
+   npx prisma generate
+
+2. Add the new migration and apply (dev):
+
+   npx prisma migrate dev --name add_estudei_metric
+
+3. Run the application (scheduler runs inside the Nest app):
+
+   npm run start
+
+Manual trigger:
+
+- POST /metrics/collect will queue a manual collection (returns 202 queued)
+
+Testing:
+
+- Run unit tests:
+
+  npm test

@@ -286,3 +286,24 @@ model HelpdeskAuditLog {
   @@index([level])
   @@index([endpoint, method])
 }
+
+// New model: Estudei metrics collected from external API
+model EstudeiMetric {
+  id        String   @id @default(uuid())
+  source    String   @default("estudei")
+  fetchedAt DateTime
+
+  // Normalized numeric fields for easy queries
+  plans               Int?
+  topics              Int?
+  subjects            Int?
+  plannings           Int?
+  studies             Int?
+  durationStudiesWeek BigInt?
+  students            Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([fetchedAt])
+  @@index([source])
+}

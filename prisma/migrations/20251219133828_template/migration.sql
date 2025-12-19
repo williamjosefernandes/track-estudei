@@ -210,6 +210,23 @@ CREATE TABLE "public"."HelpdeskAuditLog" (
     CONSTRAINT "HelpdeskAuditLog_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "public"."EstudeiMetric" (
+    "id" TEXT NOT NULL,
+    "source" TEXT NOT NULL DEFAULT 'estudei',
+    "fetchedAt" TIMESTAMP(3) NOT NULL,
+    "plans" INTEGER,
+    "topics" INTEGER,
+    "subjects" INTEGER,
+    "plannings" INTEGER,
+    "studies" INTEGER,
+    "durationStudiesWeek" BIGINT,
+    "students" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "EstudeiMetric_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "public"."User"("email");
 
@@ -305,6 +322,12 @@ CREATE INDEX "HelpdeskAuditLog_level_idx" ON "public"."HelpdeskAuditLog"("level"
 
 -- CreateIndex
 CREATE INDEX "HelpdeskAuditLog_endpoint_method_idx" ON "public"."HelpdeskAuditLog"("endpoint", "method");
+
+-- CreateIndex
+CREATE INDEX "EstudeiMetric_fetchedAt_idx" ON "public"."EstudeiMetric"("fetchedAt");
+
+-- CreateIndex
+CREATE INDEX "EstudeiMetric_source_idx" ON "public"."EstudeiMetric"("source");
 
 -- AddForeignKey
 ALTER TABLE "public"."AuthToken" ADD CONSTRAINT "AuthToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

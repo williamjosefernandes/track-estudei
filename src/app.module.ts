@@ -14,6 +14,8 @@ import { HistoryModule } from './history/history.module';
 
 import { HelpDeskModule } from './helpdesk/helpdesk.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -27,6 +29,7 @@ import { NotificationsModule } from './notifications/notifications.module';
       serveRoot: '/assets-data',
     }),
     CacheModule.register({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     UserModule,
     AuthModule,
     JwtModule,
@@ -36,6 +39,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 
     HelpDeskModule,
     NotificationsModule,
+    MetricsModule,
   ],
   providers: [PrismaService, DateApiService],
 })
