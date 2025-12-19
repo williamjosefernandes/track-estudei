@@ -110,11 +110,39 @@ export class MetricsController {
     const isoEnd = this.parseDateParam(end);
     this.validateDatesOrderIso(isoStart, isoEnd);
     this.logger.log(`students/daily start=${start} end=${end}`);
-    const data = await this.metricsService.getNewStudentsAggregation({
+    const raw = await this.metricsService.getAggregatedMetrics({
       groupBy: 'day',
       start: isoStart,
       end: isoEnd,
     });
+
+    const data = raw.map((r) => ({
+      period: r.period,
+      novosUsuarios: r.new.students,
+      usuariosTotais: r.total.students,
+
+      novosPlanos: r.new.plans,
+      planosTotais: r.total.plans,
+
+      novosTopicos: r.new.topics,
+      topicosTotais: r.total.topics,
+
+      novosAssuntos: r.new.subjects,
+      assuntosTotais: r.total.subjects,
+
+      novosPlanejamentos: r.new.plannings,
+      planejamentosTotais: r.total.plannings,
+
+      novosEstudos: r.new.studies,
+      estudosTotais: r.total.studies,
+
+      novosDuracaoSemana: r.new.durationStudiesWeek,
+      duracaoSemanaTotais: r.total.durationStudiesWeek,
+
+      valorNovo: r.new.value,
+      valorTotal: r.total.value,
+    }));
+
     return { data };
   }
 
@@ -160,11 +188,32 @@ export class MetricsController {
     this.logger.log(
       `students/weekly start=${computedStart} end=${computedEnd}`,
     );
-    const data = await this.metricsService.getNewStudentsAggregation({
+    const raw = await this.metricsService.getAggregatedMetrics({
       groupBy: 'week',
       start: computedStart,
       end: computedEnd,
     });
+
+    const data = raw.map((r) => ({
+      period: r.period,
+      novosUsuarios: r.new.students,
+      usuariosTotais: r.total.students,
+      novosPlanos: r.new.plans,
+      planosTotais: r.total.plans,
+      novosTopicos: r.new.topics,
+      topicosTotais: r.total.topics,
+      novosAssuntos: r.new.subjects,
+      assuntosTotais: r.total.subjects,
+      novosPlanejamentos: r.new.plannings,
+      planejamentosTotais: r.total.plannings,
+      novosEstudos: r.new.studies,
+      estudosTotais: r.total.studies,
+      novosDuracaoSemana: r.new.durationStudiesWeek,
+      duracaoSemanaTotais: r.total.durationStudiesWeek,
+      valorNovo: r.new.value,
+      valorTotal: r.total.value,
+    }));
+
     return { data };
   }
 
@@ -210,11 +259,32 @@ export class MetricsController {
     this.logger.log(
       `students/monthly start=${computedStart} end=${computedEnd}`,
     );
-    const data = await this.metricsService.getNewStudentsAggregation({
+    const raw = await this.metricsService.getAggregatedMetrics({
       groupBy: 'month',
       start: computedStart,
       end: computedEnd,
     });
+
+    const data = raw.map((r) => ({
+      period: r.period,
+      novosUsuarios: r.new.students,
+      usuariosTotais: r.total.students,
+      novosPlanos: r.new.plans,
+      planosTotais: r.total.plans,
+      novosTopicos: r.new.topics,
+      topicosTotais: r.total.topics,
+      novosAssuntos: r.new.subjects,
+      assuntosTotais: r.total.subjects,
+      novosPlanejamentos: r.new.plannings,
+      planejamentosTotais: r.total.plannings,
+      novosEstudos: r.new.studies,
+      estudosTotais: r.total.studies,
+      novosDuracaoSemana: r.new.durationStudiesWeek,
+      duracaoSemanaTotais: r.total.durationStudiesWeek,
+      valorNovo: r.new.value,
+      valorTotal: r.total.value,
+    }));
+
     return { data };
   }
 
@@ -241,11 +311,32 @@ export class MetricsController {
       `Requesting students aggregation groupBy=${groupBy} start=${start} end=${end}`,
     );
 
-    const result = await this.metricsService.getNewStudentsAggregation({
+    const raw = await this.metricsService.getAggregatedMetrics({
       groupBy,
       start: isoStart,
       end: isoEnd,
     });
-    return { data: result };
+
+    const data = raw.map((r) => ({
+      period: r.period,
+      novosUsuarios: r.new.students,
+      usuariosTotais: r.total.students,
+      novosPlanos: r.new.plans,
+      planosTotais: r.total.plans,
+      novosTopicos: r.new.topics,
+      topicosTotais: r.total.topics,
+      novosAssuntos: r.new.subjects,
+      assuntosTotais: r.total.subjects,
+      novosPlanejamentos: r.new.plannings,
+      planejamentosTotais: r.total.plannings,
+      novosEstudos: r.new.studies,
+      estudosTotais: r.total.studies,
+      novosDuracaoSemana: r.new.durationStudiesWeek,
+      duracaoSemanaTotais: r.total.durationStudiesWeek,
+      valorNovo: r.new.value,
+      valorTotal: r.total.value,
+    }));
+
+    return { data };
   }
 }

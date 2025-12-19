@@ -301,6 +301,8 @@ model EstudeiMetric {
   studies             Int?
   durationStudiesWeek BigInt?
   students            Int?
+  // Monetary value (students * 28.40)
+  value               Decimal? @db.Decimal(12, 2)
 
   createdAt DateTime @default(now())
 

@@ -49,6 +49,11 @@ export class MetricsService {
       // assumption: cada student pode ter até 3 plans -> estimativa de students
       const students = Math.ceil(plans / 3);
 
+      // calculate monetary value: students * 28.40 (store as string with 2 decimals)
+      const unitPrice = 28.4;
+      const valueNumber = Number((students * unitPrice).toFixed(2));
+      const valueStr = valueNumber.toFixed(2);
+
       await this.prisma.estudeiMetric.create({
         data: {
           fetchedAt: new Date(),
@@ -59,8 +64,9 @@ export class MetricsService {
           studies: studies || null,
           durationStudiesWeek: durationStudiesWeek ?? null,
           students: students || null,
+          value: valueStr || null,
         },
-      });
+      } as any);
 
       this.logger.log('Estudei metrics saved');
       return result;
@@ -262,6 +268,159 @@ export class MetricsService {
       const newStudents = Math.max(0, totalStudents - previousStudents);
       results.push({ period: key, newStudents, totalStudents });
       previousStudents = totalStudents;
+    }
+
+    return results;
+  }
+
+  // New method: aggregate multiple metrics per period (totals and new/delta)
+  async getAggregatedMetrics(options: {
+    groupBy: 'day' | 'week' | 'month';
+    start?: string; // ISO date
+    end?: string; // ISO date
+  }) {
+    const { groupBy, start, end } = options;
+    const endDate = end ? parseISO(end) : new Date();
+    const startDate = start
+      ? parseISO(start)
+      : new Date(Date.now() - 1000 * 60 * 60 * 24 * 30); // default 30 days
+
+    if (startDate > endDate) {
+      throw new Error('start must be before end');
+    }
+
+    const prefetchDate = new Date(
+      startDate.getTime() - 1000 * 60 * 60 * 24 * 2,
+    );
+
+    const metrics = await this.prisma.estudeiMetric.findMany({
+      where: {
+        fetchedAt: {
+          gte: prefetchDate,
+          lte: endDate,
+        },
+      },
+      orderBy: { fetchedAt: 'asc' },
+    });
+
+    if (!metrics || metrics.length === 0) return [];
+
+    const buckets: Record<string, { date: Date; metric: any }[]> = {};
+
+    for (const m of metrics) {
+      const ts = m.fetchedAt as Date;
+      let key = '';
+      if (groupBy === 'day') {
+        key = format(startOfDay(ts), 'yyyy-MM-dd');
+      } else if (groupBy === 'week') {
+        const wkStart = startOfWeek(ts, { weekStartsOn: 1 });
+        key = format(wkStart, 'yyyy-LL-dd');
+      } else {
+        const monthStart = startOfMonth(ts);
+        key = format(monthStart, 'yyyy-LL');
+      }
+      buckets[key] = buckets[key] || [];
+      buckets[key].push({ date: ts, metric: m });
+    }
+
+    const sortedKeys = Object.keys(buckets).sort();
+
+    const results: Array<any> = [];
+
+    // get latest metric before startDate to serve as previous baseline
+    const beforeStart = metrics
+      .filter((m) => (m.fetchedAt as Date) < startDate)
+      .pop();
+
+    const toNumber = (v: any) => {
+      if (v == null) return 0;
+      const n = Number(v);
+      return Number.isNaN(n) ? 0 : n;
+    };
+
+    let previous = {
+      students:
+        beforeStart && beforeStart.students != null
+          ? toNumber(beforeStart.students)
+          : 0,
+      plans:
+        beforeStart && beforeStart.plans != null
+          ? toNumber(beforeStart.plans)
+          : 0,
+      topics:
+        beforeStart && beforeStart.topics != null
+          ? toNumber(beforeStart.topics)
+          : 0,
+      subjects:
+        beforeStart && beforeStart.subjects != null
+          ? toNumber(beforeStart.subjects)
+          : 0,
+      plannings:
+        beforeStart && beforeStart.plannings != null
+          ? toNumber(beforeStart.plannings)
+          : 0,
+      studies:
+        beforeStart && beforeStart.studies != null
+          ? toNumber(beforeStart.studies)
+          : 0,
+      durationStudiesWeek:
+        beforeStart && beforeStart.durationStudiesWeek != null
+          ? Number(beforeStart.durationStudiesWeek)
+          : 0,
+      value:
+        beforeStart && (beforeStart as any).value != null
+          ? Number(String((beforeStart as any).value))
+          : 0,
+    };
+
+    for (const key of sortedKeys) {
+      const items = buckets[key];
+      items.sort((a, b) => a.date.getTime() - b.date.getTime());
+      const latest = items[items.length - 1].metric;
+
+      const total = {
+        students: toNumber(latest.students),
+        plans: toNumber(latest.plans),
+        topics: toNumber(latest.topics),
+        subjects: toNumber(latest.subjects),
+        plannings: toNumber(latest.plannings),
+        studies: toNumber(latest.studies),
+        durationStudiesWeek:
+          latest.durationStudiesWeek != null
+            ? Number(latest.durationStudiesWeek)
+            : 0,
+        value:
+          (latest as any).value != null
+            ? Number(String((latest as any).value))
+            : 0,
+      };
+
+      const delta = {
+        students: Math.max(0, total.students - previous.students),
+        plans: Math.max(0, total.plans - previous.plans),
+        topics: Math.max(0, total.topics - previous.topics),
+        subjects: Math.max(0, total.subjects - previous.subjects),
+        plannings: Math.max(0, total.plannings - previous.plannings),
+        studies: Math.max(0, total.studies - previous.studies),
+        durationStudiesWeek: Math.max(
+          0,
+          total.durationStudiesWeek - previous.durationStudiesWeek,
+        ),
+        value: Math.max(0, Number((total.value - previous.value).toFixed(2))),
+      };
+
+      results.push({ period: key, total, new: delta });
+
+      previous = {
+        students: total.students,
+        plans: total.plans,
+        topics: total.topics,
+        subjects: total.subjects,
+        plannings: total.plannings,
+        studies: total.studies,
+        durationStudiesWeek: total.durationStudiesWeek,
+        value: total.value,
+      };
     }
 
     return results;
