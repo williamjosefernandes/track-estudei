@@ -12,7 +12,7 @@ RUN npm i
 COPY . .
 
 # Gera o client do Prisma; DATABASE_URL está definido via ARG/ENV para evitar erro de validação durante build
-RUN npx prisma generate || true
+RUN #npx prisma generate || true
 
 RUN npm run build
 
