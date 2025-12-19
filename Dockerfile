@@ -2,6 +2,9 @@ FROM node:18 AS build
 
 WORKDIR /usr/src/app
 
+ARG DATABASE_URL="postgresql://postgres:srcWGlzAymjKEIkdANEFrMQEMvAohtjB@postgres.railway.internal:5432/railway"
+ENV DATABASE_URL=${DATABASE_URL}
+
 COPY package.json ./
 
 RUN npm i
