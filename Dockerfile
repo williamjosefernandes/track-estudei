@@ -1,4 +1,4 @@
-FROM node:18 AS build
+FROM node:20 AS build
 
 WORKDIR /usr/src/app
 
@@ -17,7 +17,7 @@ RUN npx prisma generate || true
 RUN npm run build
 
 # Produção: imagem mais leve
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 WORKDIR /usr/src/app
 
 ENV NODE_ENV=production

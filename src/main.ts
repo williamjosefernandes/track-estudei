@@ -1,7 +1,16 @@
+import * as nodeCrypto from 'crypto';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
+
+// Ensure global `crypto` (and crypto.randomUUID) are available for dependencies
+if (!(global as any).crypto) {
+  (global as any).crypto = (globalThis as any).crypto = (nodeCrypto as any).webcrypto ?? nodeCrypto;
+}
+if (typeof (global as any).crypto.randomUUID !== 'function') {
+  (global as any).crypto.randomUUID = () => (nodeCrypto as any).randomBytes(16).toString('hex');
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
