@@ -1,24 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-import openapiToPostman from 'openapi-to-postmanv2';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
-  // Ensure globalThis.crypto is defined (some Node/Docker images lack it)
-  if (!(globalThis as any).crypto) {
-    try {
-      const nodeCrypto = await import('crypto');
-      // Prefer webcrypto if available
-      (globalThis as any).crypto = (nodeCrypto as any).webcrypto ?? nodeCrypto;
-    } catch (_err) {
-      const nodeCrypto = await import('crypto');
-      (globalThis as any).crypto = {
-        randomUUID: () => (nodeCrypto as any).randomBytes(16).toString('hex'),
-      };
-    }
-  }
-
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
@@ -31,33 +16,36 @@ async function bootstrap() {
   SwaggerModule.setup('swagger', app, document);
 
   // Endpoint para baixar a Collection v2.1 do Postman gerada a partir do OpenAPI
-  app.getHttpAdapter().get('/docs/postman-collection.json', (req, res) => {
+  const adapter = app.getHttpAdapter();
+  adapter.get('/docs/postman-collection.json', async (req, res) => {
     try {
+      // Usa import dinâmico para evitar regras de lint sobre require
+      const openapiToPostman = (await import('openapi-to-postmanv2')) as any;
+
       openapiToPostman.convert(
         { type: 'json', data: document },
         {
-          collectionName: (document as any)?.info?.title || 'Estudei Track API',
+          collectionName: (document as any)?.info?.title || 'Sou Instrutor API',
           strictValidation: false,
-          // Gera exemplos quando possível para enriquecer a collection
           schemaFaker: true,
         },
         (err: any, result: any) => {
           if (err) {
-            res.status(500);
-            res.json({
+            res.status(500).json({
               message: 'Conversion error',
               error: String(err),
             });
             return;
           }
+
           if (!result || !result.result) {
-            res.status(500);
-            res.json({
+            res.status(500).json({
               message: 'Conversion failed',
               reason: result && result.reason,
             });
             return;
           }
+
           const collection = result.output[0].data;
           res.setHeader('Content-Type', 'application/json');
           res.setHeader(
@@ -68,13 +56,13 @@ async function bootstrap() {
         },
       );
     } catch (e) {
-      res.status(500);
-      res.json({
+      res.status(500).json({
         message: 'Unexpected error during conversion',
         error: String(e),
       });
     }
   });
+
   app.enableCors({
     origin: [
       '*',
@@ -83,8 +71,8 @@ async function bootstrap() {
       'http://localhost:5175',
       'http://localhost:5176',
       'http://localhost:5177',
-      'https://gabaritte.com.br',
-      'https://www.gabaritte.com.br',
+      'https://souinstrutor.com.br',
+      'https://www.souinstrutor.com.br',
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -93,7 +81,8 @@ async function bootstrap() {
 
   const port = parseInt(process.env.PORT ?? '3001', 10);
   await app.listen(port);
+
+  Logger.log(`Aplicativo iniciado com sucesso na porta ${port}`);
 }
-bootstrap().then(() => {
-  console.log('Application successfully started!');
-});
+
+bootstrap();
