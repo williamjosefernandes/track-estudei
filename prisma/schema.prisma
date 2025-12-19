@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:srcWGlzAymjKEIkdANEFrMQEMvAohtjB@postgres.railway.internal:5432/railway"
+  url      = "postgresql://postgres:srcWGlzAymjKEIkdANEFrMQEMvAohtjB@switchyard.proxy.rlwy.net:32246/railway"
 }
 
 // Enum for status

@@ -141,7 +141,8 @@ export class MetricsController {
       const valorNovosUsuariosRaw = studentsDelta * 28.4;
       return {
         period: r.period,
-        novosUsuarios: this.formatNumber(r.new.students),
+        // Use bucket delta (latest - earliest) for novosUsuarios as requested
+        novosUsuarios: this.formatNumber(studentsDelta),
         usuariosTotais: this.formatNumber(r.total.students),
 
         novosPlanos: this.formatNumber(r.new.plans),
@@ -227,7 +228,7 @@ export class MetricsController {
       const valorNovosUsuariosRaw = studentsDelta * 28.4;
       return {
         period: r.period,
-        novosUsuarios: this.formatNumber(r.new.students),
+        novosUsuarios: this.formatNumber(studentsDelta),
         usuariosTotais: this.formatNumber(r.total.students),
         novosPlanos: this.formatNumber(r.new.plans),
         planosTotais: this.formatNumber(r.total.plans),
@@ -304,7 +305,7 @@ export class MetricsController {
       const valorNovosUsuariosRaw = studentsDelta * 28.4;
       return {
         period: r.period,
-        novosUsuarios: this.formatNumber(r.new.students),
+        novosUsuarios: this.formatNumber(studentsDelta),
         usuariosTotais: this.formatNumber(r.total.students),
         novosPlanos: this.formatNumber(r.new.plans),
         planosTotais: this.formatNumber(r.total.plans),
@@ -362,7 +363,7 @@ export class MetricsController {
       const valorNovosUsuariosRaw = studentsDelta * 28.4;
       return {
         period: r.period,
-        novosUsuarios: this.formatNumber(r.new.students),
+        novosUsuarios: this.formatNumber(studentsDelta),
         usuariosTotais: this.formatNumber(r.total.students),
         novosPlanos: this.formatNumber(r.new.plans),
         planosTotais: this.formatNumber(r.total.plans),
